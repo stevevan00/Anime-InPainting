@@ -7,10 +7,11 @@ import numpy as np
 import torchvision.transforms.functional as F
 from torch.utils.data import DataLoader
 from PIL import Image
-from scipy.misc import imread
 from skimage.feature import canny
 from skimage.color import rgb2gray
 from .utils import create_mask
+import imageio
+import cv2
 
 
 class Dataset(torch.utils.data.Dataset):
@@ -54,7 +55,7 @@ class Dataset(torch.utils.data.Dataset):
         size = self.input_size
 
         # load image
-        img = imread(self.data[index])
+        img = imageio.imread(self.data[index])
 
         # resize/crop if needed
         if size != 0:
@@ -75,7 +76,7 @@ class Dataset(torch.utils.data.Dataset):
             img_gray = img_gray[:, ::-1, ...]
             edge = edge[:, ::-1, ...]
             mask = mask[:, ::-1, ...]
-
+        # print(img.shape, img_gray.shape, edge.shape, mask.shape)
         return self.to_tensor(img), self.to_tensor(img_gray), self.to_tensor(edge), self.to_tensor(mask)
 
     def load_edge(self, img, index, mask):
@@ -100,7 +101,7 @@ class Dataset(torch.utils.data.Dataset):
         # external
         else:
             imgh, imgw = img.shape[0:2]
-            edge = imread(self.edge_data[index])
+            edge = imageio.imread(self.edge_data[index])
             edge = self.resize(edge, imgh, imgw)
 
             # non-max suppression
@@ -133,14 +134,14 @@ class Dataset(torch.utils.data.Dataset):
         # external
         if mask_type == 3:
             mask_index = random.randint(0, len(self.mask_data) - 1)
-            mask = imread(self.mask_data[mask_index])
+            mask = imageio.imread(self.mask_data[mask_index])
             mask = self.resize(mask, imgh, imgw)
             mask = (mask > 0).astype(np.uint8) * 255  # threshold due to interpolation
             return mask
 
         # test mode: load mask non random
         if mask_type == 6:
-            mask = imread(self.mask_data[index])
+            mask = imageio.imread(self.mask_data[index])
             mask = self.resize(mask, imgh, imgw, centerCrop=False)
             mask = rgb2gray(mask)
             mask = (mask > 0).astype(np.uint8) * 255
@@ -161,7 +162,7 @@ class Dataset(torch.utils.data.Dataset):
             i = (imgw - side) // 2
             img = img[j:j + side, i:i + side, ...]
 
-        img = scipy.misc.imresize(img, [height, width])
+        img = cv2.resize(img, (height, width))
 
         return img
 

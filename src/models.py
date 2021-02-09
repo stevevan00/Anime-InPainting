@@ -94,6 +94,7 @@ class EdgeModel(BaseModel):
         self.dis_optimizer.zero_grad()
 
         # process outputs
+        # print('self', images.shape, edges.shape, masks.shape)
         outputs = self(images, edges, masks)
         gen_loss = 0
         dis_loss = 0
@@ -132,6 +133,7 @@ class EdgeModel(BaseModel):
     def forward(self, images, edges, masks):
         edges_masked = (edges * (1 - masks))
         images_masked = (images * (1 - masks)) + masks
+        # print('forward', images_masked.shape, edges_masked.shape, masks.shape)
         inputs = torch.cat((images_masked, edges_masked, masks), dim=1)
         outputs = self.generator(inputs)  # in: [grayscale(1) + edge(1) + mask(1)]
         return outputs
@@ -139,10 +141,10 @@ class EdgeModel(BaseModel):
     def backward(self, gen_loss=None, dis_loss=None):
         if dis_loss is not None:
             dis_loss.backward()
-        self.dis_optimizer.step()
-
         if gen_loss is not None:
             gen_loss.backward()
+
+        self.dis_optimizer.step()
         self.gen_optimizer.step()
 
 
